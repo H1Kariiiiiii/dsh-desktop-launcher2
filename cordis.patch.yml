@@ -1,0 +1,4 @@
+# dsh-desktop-launcher2 bundle patch — 加载宿主插件与客户端卡片
+- insert:
+    - id: dsh-desktop-launcher2
+      name: dsh-desktop-launcher2

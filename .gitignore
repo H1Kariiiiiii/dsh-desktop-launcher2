@@ -1,0 +1,12 @@
+# dependencies (local junction for schemastery dev resolution)
+node_modules/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+
+# gen output (never committed)
+*.tmp
