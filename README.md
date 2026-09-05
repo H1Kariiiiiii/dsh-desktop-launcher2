@@ -4,7 +4,10 @@
 
 ## 背景
 
-`@linxin666/dsh-web-all` 从 0.3.16 起不再包含桌面启动器（原 `@linxin666/dsh-desktop-launcher@0.2.8` 在 rc.1 认证升级后已不可用：启动脚本打开裸 URL 会 401，client 端依赖的 `@deepseek-ai/dsh-client-runtime` 在 rc.1 中不存在）。本项目以纯 ESM JavaScript 复刻该功能与 UI，适配 DeepSeek Harness **0.1.2-rc.1**（Windows），并修复了上述问题。
+- `@linxin666/dsh-desktop-launcher` 是独立 npm 包（仓库 [zhu1090093659/dsh-web](https://github.com/zhu1090093659/dsh-web)），当前最新 0.3.13（2026-09-03）仍在维护。
+- 聚合包 `@linxin666/dsh-web-all` **在 0.3.3 → 0.3.13 期间把它作为依赖捆绑**；**自 0.3.14 起从聚合作物依赖中移除**（0.3.14/0.3.15/0.3.16 的 `dependencies` 与 `exports` 均无 `desktop-launcher`）。
+- 本项目移植基于 **0.2.8 源码**（本机 `.pnpm_patches` 残留；该版本依赖的 `@deepseek-ai/dsh-client-runtime` 已在 rc.1 中不存在）。注意：原包 0.3.9+ 已改用 `dsh-client-store`/`dsh-client-ui-renderer` 等仍存在的包适配 alpha.2+，0.3.13 要求 `dsh >= 0.1.2-alpha.4`，理论上可安装；本项目选择独立复刻而非直接依赖原包。
+- 本仓库代码：纯 ESM JavaScript（无 TS/JSX，client bundle 走 `window.__ModuleLoader__.load` 惰性 CJS 工厂），适配 DeepSeek Harness **0.1.2-rc.1**（Windows）。
 
 ## 功能
 
