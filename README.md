@@ -2,6 +2,10 @@
 
 > DeepSeek Harness **桌面启动器 + 一键关机** 插件：在 Web 设置页创建桌面图标（双击启动 dsh web），带 WPF 风格的启动弹窗；页面右下角悬浮电源按钮，点击确认后优雅退出 dsh 进程。
 
+<!-- 仓库 Topics 建议（在 GitHub 仓库页 About → Topics 添加）：
+     dsh · dsh-plugin · deepseek-harness · desktop-launcher · shutdown · powershell
+     确保 dsh 插件市场/社区索引能发现本仓库。 -->
+
 ## ⚡ 安装（复制这一行即可）
 
 ```powershell
