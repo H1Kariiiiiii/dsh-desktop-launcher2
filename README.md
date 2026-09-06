@@ -45,6 +45,16 @@ dsh plugin --profile web add github:H1Kariiiiiii/dsh-desktop-launcher2
 
 配置写入 `~/.dsh/settings.yaml` 的 `desktop-launcher` 段（与官方设置面板共享，重启后保留）。
 
+## 截图
+
+**设置页卡片（设置 → 插件 → 插件配置 → 桌面启动器）**
+
+![桌面启动器设置卡片](assets/screenshots/settings-card.png)
+
+**页面右下角悬浮关机按钮**
+
+![悬浮关机按钮](assets/screenshots/shutdown-button.png)
+
 ## 安装
 
 > 需要本机已安装 [dsh](https://www.npmjs.com/package/@deepseek-ai/dsh)（`dsh web` 能启动）。`dsh plugin add` 会检测到包声明了 `dsh.bundle` 并**自动把它加入 profile 的 bundles 层**，**无需手动编辑任何文件**，装完重启 `dsh web` 即可。
