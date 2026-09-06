@@ -2,15 +2,15 @@
 
 > DeepSeek Harness **桌面启动器 + 一键关机** 插件：在 Web 设置页创建桌面图标（双击启动 dsh web），带 WPF 风格的启动弹窗；页面右下角悬浮电源按钮，点击确认后优雅退出 dsh 进程。
 
-## ⚡ 傻瓜式一键安装（复制这一行即可）
-
-在 **PowerShell** 里粘贴执行（自动：下载源码 → `dsh plugin add` → 自动加入 profile bundles → 验证 → 引导重启）：
+## ⚡ 安装（复制这一行即可）
 
 ```powershell
-irm https://raw.githubusercontent.com/<你的用户名>/dsh-desktop-launcher2/main/install.ps1 | iex
+dsh plugin --profile web add github:H1Kariiiiiii/dsh-desktop-launcher2
 ```
 
-> 需要本机已装 dsh（`npm i -g @deepseek-ai/dsh`）且能访问 GitHub（国内网络如失败，可 clone 本仓库后运行 `install.ps1`，脚本会用仓库内地址安装）。
+> 只需要这一句：dsh 会从 GitHub 拉取源码、安装并**自动把它加入 profile 的 bundles 层**，无需手动编辑任何文件。装完执行 `dsh web` 重启即可。
+
+（若你的 dsh 尚未安装：`npm i -g @deepseek-ai/dsh`。若 `github:` 形式在你的 pnpm 版本解析异常，可改用 `dsh plugin --profile web add git+https://github.com/H1Kariiiiiii/dsh-desktop-launcher2.git`。）
 
 ## 功能
 
@@ -45,9 +45,20 @@ irm https://raw.githubusercontent.com/<你的用户名>/dsh-desktop-launcher2/ma
 
 > 需要本机已安装 [dsh](https://www.npmjs.com/package/@deepseek-ai/dsh)（`dsh web` 能启动）。`dsh plugin add` 会检测到包声明了 `dsh.bundle` 并**自动把它加入 profile 的 bundles 层**，**无需手动编辑任何文件**，装完重启 `dsh web` 即可。
 
-> **最省事**：用页面顶部的「⚡ 傻瓜式一键安装」一行命令（自动完成下面全部步骤）。
+### 推荐：从 GitHub 安装
 
-### 方式一：本地源码安装
+```powershell
+# 安装
+dsh plugin --profile web add github:H1Kariiiiiii/dsh-desktop-launcher2
+
+# 重启
+dsh web
+```
+
+> 纯 JS 包（无构建脚本），GitHub 安装即可直接用。若 `github:` 形式在你的
+> pnpm 版本解析异常，可改用 `git+https://github.com/H1Kariiiiiii/dsh-desktop-launcher2.git`。
+
+### 开发/内测：本地源码安装
 
 ```powershell
 # 把仓库克隆或解压到任意位置，然后用绝对路径 file: 安装
@@ -60,19 +71,6 @@ dsh web
 > 本地 `file:` 依赖注意：pnpm 跨盘符时是**复制**（非链接），改源码后需重跑一次
 > `dsh plugin --profile web add "file:C:/路径/dsh-desktop-launcher2"`
 > （或删掉 `node_modules/dsh-desktop-launcher2` 后 `pnpm install`）才会同步。
-
-### 方式二：从 GitHub 安装
-
-```powershell
-# 在你的 dsh web profile 里安装
-dsh plugin --profile web add github:<你的用户名>/dsh-desktop-launcher2
-
-# 重启 dsh web 使插件生效
-dsh web
-```
-
-> 纯 JS 包（无构建脚本），GitHub 安装即可直接用。若 `github:` 形式在你的
-> pnpm 版本解析异常，可改用 `git+https://github.com/<用户名>/dsh-desktop-launcher2.git`。
 
 ### 安装后验证
 

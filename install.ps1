@@ -1,6 +1,6 @@
 # dsh-desktop-launcher2 傻瓜安装脚本
-# 用法（复制粘贴一行即装；发布后把下方 <你的用户名> 换成真实用户名即可）：
-#   irm https://raw.githubusercontent.com/<你的用户名>/dsh-desktop-launcher2/main/install.ps1 | iex
+# 用法（复制粘贴一行即装）：
+#   irm https://raw.githubusercontent.com/H1Kariiiiiii/dsh-desktop-launcher2/main/install.ps1 | iex
 #
 # 也可以先 clone 本仓库再运行：
 #   powershell -ExecutionPolicy Bypass -File install.ps1
@@ -15,8 +15,8 @@ param(
     [string]$Profile = "web"
 )
 
-# ==== 发布前请替换为你的真实仓库地址（irm|iex 方式运行时会用到它） ====
-$DEFAULT_REPO = "https://github.com/<你的用户名>/dsh-desktop-launcher2.git"
+# ==== 默认为本仓库（irm|iex 方式运行时会用到它） ====
+$DEFAULT_REPO = "https://github.com/H1Kariiiiiii/dsh-desktop-launcher2.git"
 
 $ErrorActionPreference = "Stop"
 $PSDefaultParameterValues['ProgressPreference'] = 'SilentlyContinue'
@@ -37,10 +37,6 @@ try {
             }
         }
         if ([string]::IsNullOrWhiteSpace($RepoUrl)) {
-            if ($DEFAULT_REPO -match "<你的用户名>") {
-                Write-Err "DEFAULT_REPO 尚未配置（含占位符）；请先发布仓库并修改本脚本，或使用 -RepoUrl"
-                exit 1
-            }
             $RepoUrl = $DEFAULT_REPO
             Write-Info "使用默认仓库: $RepoUrl"
         }
