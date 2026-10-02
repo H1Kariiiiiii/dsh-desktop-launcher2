@@ -1,165 +1,149 @@
-# dsh-desktop-launcher2
+# dsh-icon-console
 
-> Desktop launcher + one-click shutdown plugin for DeepSeek Harness: create a desktop icon from the Web settings page (double-click to start `dsh web`), with a WPF-style startup popup; plus a floating power button at the bottom-right that exits dsh gracefully after confirmation.
+> Icon console for the **DeepSeek Harness desktop application**: import an icon once and apply it to the desktop shortcut, the Start Menu shortcut, the application window image and the system tray image — plus one-click restart and graceful exit.
 
 [中文](README.md) · **English**
 
-<!-- Repo Topics suggestion (add on the GitHub repo page: About → Topics):
-     dsh · dsh-plugin · deepseek-harness · desktop-launcher · shutdown · powershell -->
+<!-- Repo Topics suggestion (repo page → About → Topics): dsh · dsh-plugin · deepseek-harness · desktop · icon · tray -->
 
 ## ⚡ Install (copy this single line)
 
 ```powershell
-dsh plugin --profile web add github:H1Kariiiiiii/dsh-desktop-launcher2
+pwsh -File ~\.dsh\tools\dsh-desktop-cli.ps1 plugin --profile desktop add github:H1Kariiiiiii/dsh-icon-console
 ```
 
-> That's all: dsh pulls the source from GitHub, installs it, and **auto-adds it to your profile's bundles layer** — no manual file edits. Then restart with `dsh web`.
-
-(If `dsh` isn't installed yet: `npm i -g @deepseek-ai/dsh`. If the `github:` form fails on your pnpm version, use `dsh plugin --profile web add git+https://github.com/H1Kariiiiiii/dsh-desktop-launcher2.git`.)
+> The desktop profile is managed exclusively by the Electron application, so an ordinary `dsh` command refuses to touch it — hence the desktop's own CLI. Restart the desktop app afterwards.
 
 ## Features
 
-### Desktop icon (core)
-- A "Create desktop icon" button on the settings page creates `DeepSeek-Harness.lnk` on your Desktop (Windows).
-- Double-click behavior:
-  1. Probes `http://127.0.0.1:3080` for a running dsh instance.
-  2. If not running, shows a **DeepSeek-Harness-styled startup popup** (dark rounded WPF card + spinner + status text) while starting `dsh web` in the background.
-  3. Polls for up to 60 seconds, then opens the browser once ready.
-- Icon/scripts live in `~/.dsh/desktop-launcher/` (`launcher2.ps1` + `.lnk` + icon assets).
+### Icon customization (core)
 
-### One-click shutdown
-- A **floating power button** at the bottom-right of the page (circular icon).
-- Click → confirmation dialog (configurable to exit directly without confirm).
-- On confirm → `POST /api/dsh-desktop-launcher2/shutdown` → `ctx.appExit` **graceful exit** (plugin tree is disposed first; falls back to `process.exit(0)` if `appExit` is absent).
-- The browser receives the acknowledgement before the process goes away, avoiding a dead-server error page.
+| Target | Takes effect | Notes |
+|---|---|---|
+| **Desktop shortcut** | Immediately | Rewrites `IconLocation` on `DeepSeek Harness.lnk` |
+| **Start Menu shortcut** | Immediately | Same mechanism |
+| **Application window icon** | After restart | Replaces `<install>/resources/icon.png` (window & taskbar) |
+| **System tray icon** | After restart | Replaces `<install>/resources/tray.ico` |
 
-### Configuration (Settings → Plugins → Plugin configuration → Desktop launcher)
+- **Import**: upload from this machine (file picker, base64) or type a disk path
+- **Formats**: shortcuts need `.ico`; window/tray images accept `.ico` and `.png`
+- **Automatic backup**: the pristine icons are copied to `~/.dsh/icon-console/backup/` on first run
+- **One-click restore**: put the official icons back (shortcuts immediately; window/tray after restart)
+- **Icon library**: keep favourites in `~/.dsh/icon-console/library/`, reuse or delete them anytime
+
+### Application control
+
+- **Restart**: ends the current Host process; the desktop shell then shows its official recovery dialog — click 重启 / Restart (that is the default button, so Enter is enough)
+- **Exit**: ends the Host process gracefully
+
+> Why is restart implemented this way? The window and process lifecycle belong to the Electron shell; plugins run inside the Host child. The official market (dsh-market) hard-codes `allowRestart: false` under a desktop host for exactly this reason — relaunching a raw Electron process would bypass the desktop's launcher lifecycle. So this plugin hands the restart back to the shell's own recovery flow, which is the lifecycle-correct path.
+
+### Configuration (Settings → Plugins → plugin configuration → Icon console)
+
 | Field | Default | Description |
 |---|---|---|
-| Enable plugin | `true` | When off, desktop icon creation and the shutdown button stop. |
-| Announce to agent | `false` | When off, the system prompt no longer introduces this plugin. |
-| dsh command | `dsh` | Command the launcher calls; must be on PATH. |
-| Web GUI URL | `http://127.0.0.1:3080` | Address the launcher waits for and opens. |
-| Startup profile (optional) | empty | Leave blank to start `dsh web` without a `--profile` argument. |
-| Icon file (optional) | empty | `.ico/.png` path for the desktop icon; blank uses the bundled dsh icon. |
-| Confirm before exit | `true` | When off, the power button exits immediately without a confirm dialog. |
+| Enable plugin | `true` | Master switch |
+| Auto re-apply | `false` | Re-apply the remembered icon when a shortcut is found pointing elsewhere |
+| Include Start Menu | `true` | Process the Start Menu shortcut together with the desktop one |
 
-Config is written to the `desktop-launcher` section of `~/.dsh/settings.yaml` (shared with the official settings panel, persists after restart).
-
-## Screenshots
-
-**Settings card (Settings → Plugins → Plugin configuration → Desktop launcher)**
-
-![Desktop launcher settings card](assets/screenshots/settings-card.png)
-
-**Floating shutdown button at the bottom-right**
-
-![Floating shutdown button](assets/screenshots/shutdown-button.png)
+Settings live in `~/.dsh/icon-console/state.json` and in the settings form (volatile fields).
 
 ## Installation
 
-> Requires [dsh](https://www.npmjs.com/package/@deepseek-ai/dsh) (`dsh web` must start). `dsh plugin add` detects the package declares `dsh.bundle` and **auto-adds it to the profile's bundles layer** — no manual file editing; just restart `dsh web` after install.
+> Requires the DeepSeek Harness **desktop application** (Electron). Every HTTP route is loopback-only.
 
 ### Recommended: install from GitHub
 
 ```powershell
-# Install
-dsh plugin --profile web add github:H1Kariiiiiii/dsh-desktop-launcher2
+# The desktop profile is Electron-owned; use the desktop's own CLI
+pwsh -File ~\.dsh\tools\dsh-desktop-cli.ps1 plugin --profile desktop add github:H1Kariiiiiii/dsh-icon-console
 
-# Restart
-dsh web
+# Then restart the desktop app
 ```
 
-> Pure JS package (no build step), works directly from GitHub. If the `github:` form fails on your pnpm version, use `git+https://github.com/H1Kariiiiiii/dsh-desktop-launcher2.git`.
-
-### Development / internal: install from local source
+### Development: install from local source
 
 ```powershell
-# Clone or unzip the repo anywhere, then install with an absolute file: path
-dsh plugin --profile web add "file:C:/path/dsh-desktop-launcher2"
-
-# Restart
-dsh web
+pwsh -File ~\.dsh\tools\dsh-desktop-cli.ps1 plugin --profile desktop add "file:C:/path/dsh-icon-console"
 ```
 
-> Note for local `file:` dependencies: pnpm **copies** the package (not a link) across drives, so after editing source, re-run `dsh plugin --profile web add "file:C:/path/dsh-desktop-launcher2"` (or delete `node_modules/dsh-desktop-launcher2` then `pnpm install`) to sync.
+> A `file:` dependency is **copied** (not linked) across drives, so after editing source re-run `add` (or delete `node_modules/dsh-icon-console` and `pnpm install`) to sync.
 
 ### Verify after install
 
 ```powershell
-# 1) Confirm the plugin is in the composed layer (should see the dsh-desktop-launcher2 section)
-dsh --profile web --dump-config | Select-String "dsh-desktop-launcher2"
-
-# 2) Start dsh web, open Settings → Plugins → Plugin configuration → Desktop launcher:
-#    - Click "Create desktop icon" → a DeepSeek-Harness.lnk appears on the Desktop
-#    - A ⏻ floating shutdown button should appear at the bottom-right
+# The composed layer should list dsh-icon-console
+pwsh -File ~\.dsh\tools\verify-desktop-profile.mjs
 ```
+
+After restarting the desktop app, open **Settings → Plugins → plugin configuration**; the "Icon console" card should be there.
 
 ### Uninstall
 
 ```powershell
-dsh plugin --profile web remove dsh-desktop-launcher2
-# Then restart dsh web; the desktop shortcut and ~/.dsh/desktop-launcher/ scripts can be deleted manually
+pwsh -File ~\.dsh\tools\dsh-desktop-cli.ps1 plugin --profile desktop remove dsh-icon-console
+# The icon library and backups stay in ~/.dsh/icon-console/ — delete manually if unwanted
 ```
 
 ## Compatibility
 
-Tested against **rc.1** at runtime:
+Verified against **desktop 0.2.0-rc.2** (bundled DSH runtime):
 
 | Layer | Status |
 |---|---|
-| Host routes (`ctx.webServer.register`, exact) | ✅ Stable (core API) |
-| Settings registration (`installSection` / `register` dual path) | ✅ Feature-detected, degrades when absent |
+| Host routes (`ctx.webServer.register`, exact + loopback fence) | ✅ Stable |
+| Settings form (0.1.7+ `.volatile()` + `describe()` / `update()` contract) | ✅ Implemented against the new contract |
 | `ctx.appExit` | ✅ Optional read, `process.exit` fallback |
-| `ctx.systemPrompt` | ✅ Optional read, only used when announcement is on |
-| Client bundle protocol (`window.__ModuleLoader__.load` lazy CJS) | ⚠️ Private protocol, may change with dsh versions |
-| Client slot (`settings.plugin.item`, keyed) | ⚠️ Contract details (key must equal settings namespace) may change |
-| Desktop shortcut (`launcher2.ps1`) | ✅ Standalone PowerShell, independent of plugin liveness |
+| Client bundle (`window.__ModuleLoader__.load` lazy CJS factory) | ⚠️ Private protocol, may change |
+| Client slot (`settings.section`, shared with third-party cards such as wallpaper-engine) | ⚠️ Contract details may change |
+| Icon file replacement (`resources/`) | ✅ Directory is writable; an app upgrade overwrites it, just apply again |
 
-**Degradation guarantee**: even if the client UI breaks entirely, `launcher2.ps1` still starts `dsh web` on its own (it only calls the `dsh` command).
-
-Verified on: host `dsh 0.1.2-rc.1`, Node v24.19.0, Windows PowerShell 5.1+.
+**Degradation guarantee**: even if the client UI breaks entirely, icons can still be applied through the HTTP routes; shortcut icons never require an app restart.
 
 ## FAQ
 
-**Q: Saving settings errors with `settings namespace "desktop-launcher" is not registered`?**
-A: The settings service may not have been ready when the plugin applied; the route layer lazy-registers before writing (detects and registers before POST). If it still appears, restart dsh (host registration requires a restart).
+**Q: I selected a window/tray icon but nothing changed.**
+A: Those two require an **application restart** (Electron reads them once at startup). Use the "Restart" button, or restart manually.
 
-**Q: The plugin configuration card doesn't show up?**
-A: Confirm both: ① host registration succeeded (`desktop-launcher:` exists in `~/.dsh/settings.yaml`); ② the card key equals the namespace (this plugin registers as `desktop-launcher`). Refresh the page after both; host code changes require a restart.
+**Q: The shortcut icon did not refresh.**
+A: Windows Explorer caches icons. Press `F5` on the desktop, or restart Explorer (`taskkill /f /im explorer.exe & start explorer`).
 
-**Q: Opening the desktop icon shows 401 (authentication required)?**
-A: This is rc.1's browser auth (per-process random token). The launcher script lets dsh open the token-carrying browser itself; if dsh is already running and the browser lost its cookie, restart dsh so it re-opens the authenticated URL.
+**Q: "Installation directory not found".**
+A: Window/tray icons need a locatable install root. Point `DSH_DESKTOP_INSTALL` at the directory containing `resources/`.
 
-**Q: Source changes don't apply after restart?**
-A: `file:` deps are **copied** (not linked) across drives; re-run `add` or delete the `node_modules` copy and reinstall (see "Development / internal" above).
+**Q: Can a PNG be used for a shortcut?**
+A: No — Windows shortcuts only accept `.ico`. A `.png` works for the window and tray images.
+
+**Q: An app upgrade reverted my icons.**
+A: Upgrades replace `resources/`. Apply the icon again; the pristine backup stays in `~/.dsh/icon-console/backup/`.
 
 ## Background
 
-- `@linxin666/dsh-desktop-launcher` is a standalone npm package (repo [zhu1090093659/dsh-web](https://github.com/zhu1090093659/dsh-web)), latest 0.3.13 (2026-09-03), still maintained.
-- The aggregate `@linxin666/dsh-web-all` **bundled it as a dependency from 0.3.3 → 0.3.13**; **it was removed from the aggregate dependencies starting 0.3.14** (0.3.14/0.3.15/0.3.16 have no `desktop-launcher` in `dependencies` or `exports`).
-- This project is ported from the **0.2.8 source** (leftover in local `.pnpm_patches`; that version's `@deepseek-ai/dsh-client-runtime` dependency does not exist in rc.1). Note: the original package 0.3.9+ switched to `dsh-client-store`/`dsh-client-ui-renderer` etc. to support alpha.2+; 0.3.13 requires `dsh >= 0.1.2-alpha.4` and could theoretically be installed. This project chose to re-implement standalone rather than depend on the original package.
-- Repo code: plain ESM JavaScript (no TS/JSX; client bundle uses the `window.__ModuleLoader__.load` lazy-CJS factory), adapted for DeepSeek Harness **0.1.2-rc.1** (Windows).
+- This plugin was converted from `dsh-desktop-launcher2` (a desktop launcher for the **dsh web** era). The desktop application already starts from a double click and ships its own startup screen and tray-quit entry, so "create a launcher shortcut and open a browser" had no purpose left.
+- It now focuses on what the desktop genuinely lacks: **icon customization** (window / tray / shortcuts) and **convenient application control**.
+- The original launcher was ported from `@linxin666/dsh-desktop-launcher@0.2.8` (Apache-2.0). The current code is rewritten against the desktop 0.2.0 architecture; only the license and credit remain.
 
 ## Structure
 
 ```
-dsh-desktop-launcher2/
+dsh-icon-console/
 ├── lib/
-│   ├── index.js        # host entry: routes, settings registration, announcement
-│   ├── client.js       # client bundle: settings card + floating shutdown button
-│   └── host/state.js   # launcher script generation (PowerShell / POSIX)
-├── assets/             # dsh.ico / dsh.png (bundled icons) + screenshots/
-├── cordis.patch.yml    # bundle patch layer
-├── package.json        # plugin manifest (file: loading)
-└── LICENSE             # Apache-2.0
+│   ├── index.js         # host entry: routes, settings (volatile contract), backup
+│   ├── client.js        # client bundle: settings card UI
+│   └── host/
+│       ├── icons.js     # icon validation / backup / shortcut(.lnk) / resources writes
+│       └── restart.js   # exit and shell-mediated restart
+├── assets/              # bundled dsh icons
+├── cordis.patch.yml     # bundle patch layer
+├── package.json
+└── LICENSE              # Apache-2.0
 ```
 
 ## Credits
 
-- Functionality and UI ported from `@linxin666/dsh-desktop-launcher@0.2.8` (Apache-2.0) in the [zhu1090093659/dsh-web-ui](https://github.com/zhu1090093659/dsh-web-ui) repository. The launcher popup, shortcut installer, and floating shutdown button designs come from that package, rewritten as plain ESM JavaScript against the `dsh 0.1.2-rc.1` API.
-- Icon assets (`dsh.ico`/`dsh.png`) are from the original package.
+- The original launcher's functionality and UI were ported from `@linxin666/dsh-desktop-launcher@0.2.8` (Apache-2.0) in the [zhu1090093659/dsh-web-ui](https://github.com/zhu1090093659/dsh-web-ui) repository.
+- Icon assets come from that package.
 
 ## License
 
-[Apache-2.0](LICENSE) (same as the original; code includes ported parts with original copyright notices retained).
+[Apache-2.0](LICENSE) (ported parts retain their original copyright notice).

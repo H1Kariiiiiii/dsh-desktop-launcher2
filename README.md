@@ -1,169 +1,149 @@
-# dsh-desktop-launcher2
+# dsh-icon-console
 
-> DeepSeek Harness **桌面启动器 + 一键关机** 插件：在 Web 设置页创建桌面图标（双击启动 dsh web），带 WPF 风格的启动弹窗；页面右下角悬浮电源按钮，点击确认后优雅退出 dsh 进程。
+> DeepSeek Harness 桌面端 **图标控制台**：导入一个图标，一键应用到桌面快捷方式、开始菜单快捷方式、应用窗口图标与系统托盘图标；附带一键重启与优雅退出。
 
 **中文** · [English](README.en.md)
 
-<!-- 仓库 Topics 建议（在 GitHub 仓库页 About → Topics 添加）：
-     dsh · dsh-plugin · deepseek-harness · desktop-launcher · shutdown · powershell
-     确保 dsh 插件市场/社区索引能发现本仓库。 -->
+<!-- 仓库 Topics 建议（GitHub 仓库页 About → Topics）：dsh · dsh-plugin · deepseek-harness · desktop · icon · tray -->
 
 ## ⚡ 安装（复制这一行即可）
 
 ```powershell
-dsh plugin --profile web add github:H1Kariiiiiii/dsh-desktop-launcher2
+pwsh -File ~\.dsh\tools\dsh-desktop-cli.ps1 plugin --profile desktop add github:H1Kariiiiiii/dsh-icon-console
 ```
 
-> 只需要这一句：dsh 会从 GitHub 拉取源码、安装并**自动把它加入 profile 的 bundles 层**，无需手动编辑任何文件。装完执行 `dsh web` 重启即可。
-
-（若你的 dsh 尚未安装：`npm i -g @deepseek-ai/dsh`。若 `github:` 形式在你的 pnpm 版本解析异常，可改用 `dsh plugin --profile web add git+https://github.com/H1Kariiiiiii/dsh-desktop-launcher2.git`。）
+> 桌面端 profile 由 Electron 独占管理，普通 `dsh` 命令会被拒绝，因此使用桌面端自带 CLI。装完**重启桌面端**即可。
 
 ## 功能
 
-### 桌面图标（核心）
-- 设置页「创建桌面图标」按钮 → 在桌面生成 `DeepSeek-Harness.lnk`（Windows）
-- 双击快捷方式：
-  1. 探测 `http://127.0.0.1:3080` 是否已有 dsh 在运行
-  2. 未运行 → 显示 **DeepSeek Harness 风格启动弹窗**（WPF 深色圆角卡片 + 旋转加载圈 + 状态文字），同时后台启动 `dsh web`
-  3. 轮询最多 60 秒，就绪后自动打开浏览器
-- 图标/脚本存放在 `~/.dsh/desktop-launcher/`（`launcher2.ps1` + `.lnk` + 图标资源）
+### 图标自定义（核心）
 
-### 一键关机
-- 页面**右下角悬浮电源按钮**（圆形图标）
-- 点击 → 弹出确认框（可配置关闭确认直接退出）
-- 确认后 → 调用 `/api/dsh-desktop-launcher2/shutdown` → `ctx.appExit` **优雅退出**（先回收插件树再退出；无 appExit 时回退 `process.exit(0)`）
-- 浏览器先收到确认响应再关闭，避免死链错误页
+| 目标 | 生效时机 | 说明 |
+|---|---|---|
+| **桌面快捷方式** | 立即 | 改写 `DeepSeek Harness.lnk` 的 `IconLocation` |
+| **开始菜单快捷方式** | 立即 | 同上 |
+| **应用窗口图标** | 需重启 | 替换 `<安装目录>/resources/icon.png`（窗口与任务栏） |
+| **系统托盘图标** | 需重启 | 替换 `<安装目录>/resources/tray.ico` |
 
-### 配置（设置 → 插件 → 插件配置 → 桌面启动器）
+- **导入方式**：本地上传（文件选择器，base64 上传）或直接填写磁盘路径
+- **格式支持**：快捷方式图标需要 `.ico`；应用/托盘图标支持 `.ico` 与 `.png`
+- **自动备份**：首次运行即把官方图标备份到 `~/.dsh/icon-console/backup/`
+- **一键恢复**：随时还原官方图标（快捷方式立即生效，应用/托盘图标需重启）
+- **图标库**：把常用图标存到 `~/.dsh/icon-console/library/`，随时调用或删除
+
+### 应用控制
+
+- **重启应用**：结束当前 Host 进程，桌面端随后弹出官方恢复对话框——点「重启」即可（默认按钮就是重启，直接回车）
+- **退出应用**：优雅结束 Host 进程
+
+> 为什么重启是这样做的？桌面端的窗口与进程生命周期由 Electron 外壳拥有，插件跑在 Host 子进程里。官方市场（dsh-market）在桌面端同样把 `allowRestart` 硬编码为 `false`，理由是「重启原生 Electron 进程会绕过桌面端的启动器生命周期」。因此本插件不自行拉起 Electron，而是把重启交回外壳的官方恢复流程——这是生命周期正确的做法。
+
+### 配置（设置 → 插件 → 插件配置 → 图标控制台）
+
 | 字段 | 默认值 | 说明 |
 |---|---|---|
-| 启用插件 | `true` | 关闭后不再提供桌面图标创建与关机按钮 |
-| 向 Agent 公告 | `false` | 关闭后系统提示词不再介绍本插件 |
-| dsh 命令 | `dsh` | 启动器调用的命令，需在 PATH 中 |
-| Web GUI 地址 | `http://127.0.0.1:3080` | 启动后等待就绪并打开的地址 |
-| 启动 profile（可选） | 空 | 留空表示不带 `--profile` 参数 |
-| 图标文件（可选） | 空 | 桌面图标的 `.ico/.png` 路径；留空使用内置 dsh 图标 |
-| 退出前确认 | `true` | 关闭后点击关机按钮直接退出 |
+| 启用插件 | `true` | 总开关 |
+| 自动重应用 | `false` | 发现快捷方式图标被改动时自动恢复为记住的图标 |
+| 快捷方式含开始菜单 | `true` | 处理桌面快捷方式时一并处理开始菜单 |
 
-配置写入 `~/.dsh/settings.yaml` 的 `desktop-launcher` 段（与官方设置面板共享，重启后保留）。
-
-## 截图
-
-**设置页卡片（设置 → 插件 → 插件配置 → 桌面启动器）**
-
-![桌面启动器设置卡片](assets/screenshots/settings-card.png)
-
-**页面右下角悬浮关机按钮**
-
-![悬浮关机按钮](assets/screenshots/shutdown-button.png)
+配置同时保存在 `~/.dsh/icon-console/state.json` 与 settings 表单（volatile 字段）。
 
 ## 安装
 
-> 需要本机已安装 [dsh](https://www.npmjs.com/package/@deepseek-ai/dsh)（`dsh web` 能启动）。`dsh plugin add` 会检测到包声明了 `dsh.bundle` 并**自动把它加入 profile 的 bundles 层**，**无需手动编辑任何文件**，装完重启 `dsh web` 即可。
+> 需要 DeepSeek Harness **桌面端**（Electron）。所有 HTTP 路由仅限 loopback。
 
 ### 推荐：从 GitHub 安装
 
 ```powershell
-# 安装
-dsh plugin --profile web add github:H1Kariiiiiii/dsh-desktop-launcher2
+# 桌面端 profile 由 Electron 独占管理，用桌面端自带 CLI
+pwsh -File ~\.dsh\tools\dsh-desktop-cli.ps1 plugin --profile desktop add github:H1Kariiiiiii/dsh-icon-console
 
-# 重启
-dsh web
+# 然后重启桌面端
 ```
 
-> 纯 JS 包（无构建脚本），GitHub 安装即可直接用。若 `github:` 形式在你的
-> pnpm 版本解析异常，可改用 `git+https://github.com/H1Kariiiiiii/dsh-desktop-launcher2.git`。
-
-### 开发/内测：本地源码安装
+### 开发：本地源码安装
 
 ```powershell
-# 把仓库克隆或解压到任意位置，然后用绝对路径 file: 安装
-dsh plugin --profile web add "file:C:/路径/dsh-desktop-launcher2"
-
-# 重启
-dsh web
+pwsh -File ~\.dsh\tools\dsh-desktop-cli.ps1 plugin --profile desktop add "file:C:/路径/dsh-icon-console"
 ```
 
-> 本地 `file:` 依赖注意：pnpm 跨盘符时是**复制**（非链接），改源码后需重跑一次
-> `dsh plugin --profile web add "file:C:/路径/dsh-desktop-launcher2"`
-> （或删掉 `node_modules/dsh-desktop-launcher2` 后 `pnpm install`）才会同步。
+> `file:` 依赖跨盘符时 pnpm 是**复制**而非链接；改源码后需重跑一次 `add`（或删掉 `node_modules/dsh-icon-console` 再 `pnpm install`）才会同步。
 
 ### 安装后验证
 
 ```powershell
-# 1) 确认插件进了组合层（应看到 dsh-desktop-launcher2 段）
-dsh --profile web --dump-config | Select-String "dsh-desktop-launcher2"
-
-# 2) 启动 dsh web，打开 设置 → 插件 → 插件配置 → 桌面启动器：
-#    - 点击「创建桌面图标」→ 桌面应出现 DeepSeek-Harness.lnk
-#    - 页面右下角应出现 ⏻ 悬浮关机按钮
+# 组合层应出现 dsh-icon-console
+pwsh -File ~\.dsh\tools\verify-desktop-profile.mjs
 ```
+
+重启桌面端后进入 **设置 → 插件 → 插件配置**，应看到「图标控制台」卡片。
 
 ### 卸载
 
 ```powershell
-dsh plugin --profile web remove dsh-desktop-launcher2
-# 然后重启 dsh web；桌面快捷方式与 ~/.dsh/desktop-launcher/ 脚本可手动删除
+pwsh -File ~\.dsh\tools\dsh-desktop-cli.ps1 plugin --profile desktop remove dsh-icon-console
+# 图标库与备份保留在 ~/.dsh/icon-console/，可手动删除
 ```
 
 ## 兼容性说明
 
-基于 **rc.1 运行时实测**，兼容矩阵：
+基于 **桌面端 0.2.0-rc.2**（内嵌 DSH 运行时）实测：
 
 | 层 | 状态 |
 |---|---|
-| host 路由（`ctx.webServer.register`，exact） | ✅ 稳定（核心 API） |
-| settings 注册（`installSection` / `register` 双路径） | ✅ 特性检测，缺失时降级 |
+| host 路由（`ctx.webServer.register`，exact + loopback 围栏） | ✅ 稳定 |
+| settings 表单（0.1.7+ 的 `.volatile()` + `describe()` / `update()` 契约） | ✅ 已按新契约实现 |
 | `ctx.appExit` | ✅ 可选读取，缺失时 `process.exit` 兜底 |
-| `ctx.systemPrompt` | ✅ 可选读取，仅公告开启时使用 |
-| client bundle 协议（`window.__ModuleLoader__.load` 惰性 CJS） | ⚠️ 私有协议，随 dsh 版本可能变化 |
-| client 槽位（`settings.plugin.item`，keyed） | ⚠️ 契约细节（key 必须等于 settings 命名空间）可能变化 |
-| 桌面快捷方式（`launcher2.ps1`） | ✅ 独立 PowerShell，不依赖插件存活 |
+| client bundle（`window.__ModuleLoader__.load` 惰性 CJS 工厂） | ⚠️ 私有协议，随版本可能变化 |
+| client 槽位（`settings.section`，与 wallpaper-engine 等第三方卡同槽） | ⚠️ 契约细节可能变化 |
+| 图标文件替换（`resources/`） | ✅ 目录可写；应用升级会覆盖，重跑「应用图标」即可 |
 
-**降级保障**：即使 client UI 全部失效，`launcher2.ps1` 仍可独立启动 dsh web（只调用 `dsh` 命令）。
-
-本机验证项目：宿主 `dsh 0.1.2-rc.1`、Node v24.19.0、Windows PowerShell 5.1+。
+**降级保障**：即使 client UI 完全失效，图标仍可通过 HTTP 路由直接操作；快捷方式图标不依赖应用重启。
 
 ## 常见问题
 
-**Q: 保存设置报 `settings namespace "desktop-launcher" is not registered`？**
-A: 插件 apply 时 settings 服务可能尚未就绪；已在路由层做懒注册兜底（POST 前检测并注册）。若仍出现，重启 dsh（host 注册需要重启）后重试。
+**Q: 应用/托盘图标选了但没变化？**
+A: 这两项需要**重启应用**（Electron 启动时只读取一次）。用卡片里的「重启应用」按钮，或手动重启。
 
-**Q: 插件配置卡片没出现？**
-A: 确认两点：① host 端注册成功（`~/.dsh/settings.yaml` 里有 `desktop-launcher:` 段）；② 卡片 key 等于命名空间（本插件已按 `desktop-launcher` 注册）。两者都满足后刷新页面；改动 host 代码必须重启。
+**Q: 快捷方式图标不刷新？**
+A: Windows 资源管理器有图标缓存。按 `F5` 刷新桌面，或重启资源管理器（`taskkill /f /im explorer.exe & start explorer`）。
 
-**Q: 点桌面图标打开网页显示 401（authentication required）？**
-A: 这是 rc.1 的浏览器认证机制（每次进程随机 token）。本插件启动脚本已让 dsh 自己打开带 token 的浏览器；若 dsh 已在运行且浏览器丢失 cookie，重启 dsh 让它重新打开认证 URL。
+**Q: 提示「未找到 DSH 桌面端安装目录」？**
+A: 应用/托盘图标需要定位安装目录。可用环境变量 `DSH_DESKTOP_INSTALL` 指定安装根（含 `resources/` 的那一层）。
 
-**Q: 改源码后重启没变化？**
-A: `file:` 依赖在跨盘符时是**复制**而非链接，需重跑 `add` 或删 `node_modules` 内副本重装（见安装-方式二说明）。
+**Q: PNG 不能用作快捷方式图标？**
+A: Windows 快捷方式只接受 `.ico`；`.png` 可用于应用窗口与托盘图标。
+
+**Q: 升级桌面端后图标变回官方了？**
+A: 应用升级会替换 `resources/`。重新点「应用图标」即可；官方图标备份一直保留在 `~/.dsh/icon-console/backup/`。
 
 ## 背景
 
-- `@linxin666/dsh-desktop-launcher` 是独立 npm 包（仓库 [zhu1090093659/dsh-web](https://github.com/zhu1090093659/dsh-web)），当前最新 0.3.13（2026-09-03）仍在维护。
-- 聚合包 `@linxin666/dsh-web-all` **在 0.3.3 → 0.3.13 期间把它作为依赖捆绑**；**自 0.3.14 起从聚合作物依赖中移除**（0.3.14/0.3.15/0.3.16 的 `dependencies` 与 `exports` 均无 `desktop-launcher`）。
-- 本项目移植基于 **0.2.8 源码**（本机 `.pnpm_patches` 残留；该版本依赖的 `@deepseek-ai/dsh-client-runtime` 已在 rc.1 中不存在）。注意：原包 0.3.9+ 已改用 `dsh-client-store`/`dsh-client-ui-renderer` 等仍存在的包适配 alpha.2+，0.3.13 要求 `dsh >= 0.1.2-alpha.4`，理论上可安装；本项目选择独立复刻而非直接依赖原包。
-- 本仓库代码：纯 ESM JavaScript（无 TS/JSX，client bundle 走 `window.__ModuleLoader__.load` 惰性 CJS 工厂），适配 DeepSeek Harness **0.1.2-rc.1**（Windows）。
+- 本插件由 `dsh-desktop-launcher2`（dsh **web** 时代的桌面启动器）改造而来。桌面端（Electron）本身即可双击启动，自带启动画面与托盘退出，原先「创建启动快捷方式 + 打开浏览器」的定位已无意义。
+- 改造后聚焦桌面端真正缺少的能力：**图标自定义**（应用 / 托盘 / 快捷方式）与**便捷的应用控制**。
+- 原始启动器移植自 `@linxin666/dsh-desktop-launcher@0.2.8`（Apache-2.0）；当前代码已按桌面端 0.2.0 架构重写，仅保留其授权与致谢。
 
 ## 目录结构
 
 ```
-dsh-desktop-launcher2/
+dsh-icon-console/
 ├── lib/
-│   ├── index.js        # host 入口：路由、settings 注册、公告
-│   ├── client.js       # client bundle：设置卡片 + 悬浮关机按钮
-│   └── host/state.js   # launcher 脚本生成（PowerShell / POSIX）
-├── assets/             # dsh.ico / dsh.png（内置图标）
-├── cordis.patch.yml    # bundle patch 层
-├── package.json        # 插件清单（file: 加载）
-└── LICENSE             # Apache-2.0
+│   ├── index.js         # host 入口：路由、settings（volatile 契约）、备份
+│   ├── client.js        # client bundle：设置卡片 UI
+│   └── host/
+│       ├── icons.js     # 图标校验 / 备份 / 快捷方式(.lnk) / resources 写入
+│       └── restart.js   # 退出与外壳中介的重启
+├── assets/              # 内置 dsh 图标
+├── cordis.patch.yml     # bundle patch 层
+├── package.json
+└── LICENSE              # Apache-2.0
 ```
 
 ## 致谢
 
-- 功能与 UI 移植自 [zhu1090093659/dsh-web-ui](https://github.com/zhu1090093659/dsh-web-ui) 仓库的 `@linxin666/dsh-desktop-launcher@0.2.8`（Apache-2.0）。本项目的 launcher 弹窗、快捷方式安装器、悬浮关机按钮等设计均来自该包，并按 `dsh 0.1.2-rc.1` API 重写为纯 ESM JavaScript。
-- 图标资源（`dsh.ico`/`dsh.png`）沿用原包内置素材。
+- 原始启动器功能与 UI 移植自 [zhu1090093659/dsh-web-ui](https://github.com/zhu1090093659/dsh-web-ui) 仓库的 `@linxin666/dsh-desktop-launcher@0.2.8`（Apache-2.0）。
+- 图标资源沿用该包内置素材。
 
 ## License
 
-[Apache-2.0](LICENSE)（与原版一致；代码含原包移植部分，保留原版权声明）。
+[Apache-2.0](LICENSE)（保留原包移植部分的版权声明）。

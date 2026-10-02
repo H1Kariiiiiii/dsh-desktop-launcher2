@@ -1,7 +1,7 @@
 {
-  "name": "dsh-desktop-launcher2",
+  "name": "dsh-icon-console",
   "version": "1.0.0",
-  "description": "DSH 桌面启动器 + 一键关机：桌面图标创建、Web GUI 启动、优雅退出，适配 dsh 0.1.2-rc.1，移植自 @linxin666/dsh-desktop-launcher 0.2.8",
+  "description": "DSH 桌面端图标控制台：自定义应用窗口/系统托盘/桌面与开始菜单快捷方式图标，支持图标库管理与一键重启、优雅退出",
   "type": "module",
   "main": "lib/index.js",
   "license": "Apache-2.0",
@@ -9,11 +9,13 @@
     "deepseek-harness",
     "dsh",
     "dsh-plugin",
-    "desktop-launcher",
-    "shutdown"
+    "desktop",
+    "icon",
+    "tray",
+    "console"
   ],
   "dependencies": {
-    "schemastery": "^3.18.0"
+    "@deepseek-ai/schemastery": "^3.18.4"
   },
   "dsh": {
     "bundle": {
